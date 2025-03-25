@@ -34,13 +34,14 @@ services:
     image: ghcr.io/naufaldi/guestbook:prod
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.guestbook.rule=Host(`dev.faldi.xyz`)"
-      - "traefik.http.routers.guestbook.entrypoints=websecure"
-      - "traefik.http.routers.guestbook.tls.certresolver=myresolver"
-      - "com.centurylinklabs.watchtower.enable=true"
-      - "traefik.http.services.guestbook.loadbalancer.server.port=8080"
+      - "traefik.http.routers.guestbook-router.rule=Host(`dev.faldi.xyz`)"
+      - "traefik.http.routers.guestbook-router.entrypoints=websecure"
+      - "traefik.http.routers.guestbook-router.tls.certresolver=myresolver"
+      - "traefik.http.services.guestbook-service.loadbalancer.server.port=8080"
       - "traefik.docker.network=web"
-      
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "8080"
     secrets:
       - db-password
     environment:
