@@ -3,8 +3,9 @@ package app
 import (
 	"html/template"
 	"net/http"
+	"strings"
 
-	"github.com/dreamsofcode-io/guestbook/internal/handler"
+	"github.com/naufaldi/guestbook/internal/handler"
 )
 
 func (a *App) loadRoutes(tmpl *template.Template) {
@@ -12,7 +13,12 @@ func (a *App) loadRoutes(tmpl *template.Template) {
 
 	files := http.FileServer(http.Dir("./static"))
 
-	a.router.Handle("GET /static/", http.StripPrefix("/static", files))
+	a.router.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, ".css") {
+			w.Header().Set("Content-Type", "text/css")
+		}
+		http.StripPrefix("/static/", files).ServeHTTP(w, r)
+	}))
 
 	a.router.Handle("GET /{$}", http.HandlerFunc(guestbook.Home))
 

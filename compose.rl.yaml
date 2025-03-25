@@ -31,7 +31,7 @@ services:
       - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
   guestbook:
-    image: ghcr.io/dreamsofcode-io/guestbook:prod
+    image: ghcr.io/naufaldi/guestbook:prod
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.guestbook-ratelimit.ratelimit.average=20"

@@ -27,13 +27,12 @@ services:
       - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
   guestbook:
-    image: ghcr.io/dreamsofcode-io/guestbook:prod
+    build:
+      context: .
+      dockerfile: Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.guestbook.rule=Host(`dev.faldi.xyz`)"
-      - "traefik.http.routers.guestbook.entrypoints=websecure"
-      - "traefik.http.routers.guestbook.tls.certresolver=myresolver"
-      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.http.routers.guestbook.rule=Host(`localhost`)"
     secrets:
       - db-password
     environment:
@@ -43,10 +42,6 @@ services:
       - POSTGRES_DB=guestbook
       - POSTGRES_PORT=5432
       - POSTGRES_SSLMODE=disable
-    deploy:
-      mode: replicated
-      replicas: 3
-    restart: always
     depends_on:
       db:
         condition: service_healthy

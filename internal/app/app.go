@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/dreamsofcode-io/guestbook/internal/database"
-	"github.com/dreamsofcode-io/guestbook/internal/middleware"
+	"github.com/naufaldi/guestbook/internal/database"
+	"github.com/naufaldi/guestbook/internal/middleware"
 )
 
 type App struct {
