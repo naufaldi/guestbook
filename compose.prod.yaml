@@ -8,6 +8,8 @@ services:
       - "--rolling-restart"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
   reverse-proxy:
     image: traefik:v3.1
     command:
@@ -26,6 +28,8 @@ services:
     volumes:
       - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
   guestbook:
     image: ghcr.io/naufaldi/guestbook:prod
     labels:
@@ -34,6 +38,9 @@ services:
       - "traefik.http.routers.guestbook.entrypoints=websecure"
       - "traefik.http.routers.guestbook.tls.certresolver=myresolver"
       - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.http.services.guestbook.loadbalancer.server.port=8080"
+      - "traefik.docker.network=web"
+      
     secrets:
       - db-password
     environment:
@@ -50,6 +57,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - web
   db:
     image: postgres
     restart: always
@@ -68,9 +77,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - web
 volumes:
   db-data:
   letsencrypt:
 secrets:
   db-password:
     file: db/password.txt
+
+networks:
+  web:
+    driver: bridge
