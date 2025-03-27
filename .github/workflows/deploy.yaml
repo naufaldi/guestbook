@@ -60,7 +60,7 @@ jobs:
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
-          platforms: linux/amd64  # Specifically for your VPS architecture
+          platforms: linux/amd64
           push: true
           tags: |
             ghcr.io/naufaldi/guestbook:${{ needs.commit-hash.outputs.commit_hash }}
@@ -79,9 +79,9 @@ jobs:
         username: ${{ secrets.VPS_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Make sure directory exists
-          mkdir -p /root/guestbook
-          cd /root/guestbook
+          # Use home directory instead
+          mkdir -p ~/guestbook
+          cd ~/guestbook
 
           # Login to GitHub Container Registry
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -89,21 +89,29 @@ jobs:
           # Pull the latest image
           docker pull ghcr.io/naufaldi/guestbook:prod
           
-          # Make sure db/password.txt exists
+          # Create db directory and password file
           mkdir -p db
           if [ ! -f db/password.txt ]; then
             echo "your_secure_password" > db/password.txt
           fi
           
-          # Copy compose file if it doesn't exist
-          if [ ! -f compose.prod.yaml ]; then
-            # You might want to add a step to copy your compose.prod.yaml to the server
-            echo "Compose file not found"
-            exit 1
-          fi
+          # Create compose.prod.yaml
+          cat > compose.prod.yaml << 'EOL'
+          version: '3.8'
+          services:
+            app:
+              image: ghcr.io/naufaldi/guestbook:prod
+              restart: always
+              ports:
+                - "3000:3000"
+              environment:
+                - NODE_ENV=production
+              volumes:
+                - ./db:/app/db
+          EOL
           
           # Deploy using compose.prod.yaml
-          docker compose -f compose.prod.yaml down
+          docker compose -f compose.prod.yaml down || true
           docker compose -f compose.prod.yaml up -d
           
           # Clean up old images
