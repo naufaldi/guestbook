@@ -95,22 +95,13 @@ jobs:
             echo "your_secure_password" > db/password.txt
           fi
           
-          # Create compose.prod.yaml
-          cat > compose.prod.yaml << 'EOL'
-          version: '3.8'
-          services:
-            app:
-              image: ghcr.io/naufaldi/guestbook:prod
-              restart: always
-              ports:
-                - "3000:3000"
-              environment:
-                - NODE_ENV=production
-              volumes:
-                - ./db:/app/db
-          EOL
+          # Download the actual compose.prod.yaml from the repository
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o compose.prod.yaml \
+               https://api.github.com/repos/${{ github.repository }}/contents/compose.prod.yaml
           
-          # Deploy using compose.prod.yaml
+          # Deploy using the actual compose.prod.yaml
           docker compose -f compose.prod.yaml down || true
           docker compose -f compose.prod.yaml up -d
           
