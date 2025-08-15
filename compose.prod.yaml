@@ -5,6 +5,8 @@ services:
       caddy: dev.faldi.xyz
       caddy.reverse_proxy: "{{upstreams 8080}}"
       com.centurylinklabs.watchtower.enable: "true"
+    expose:
+      - "8080"
     secrets:
       - db-password
     environment:
