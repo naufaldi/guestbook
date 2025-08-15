@@ -1,47 +1,10 @@
 services:
-  watchtower:
-    image: containrrr/watchtower
-    command:
-      - "--label-enable"
-      - "--interval"
-      - "30"
-      - "--rolling-restart"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - web
-  reverse-proxy:
-    image: traefik:v3.1
-    command:
-      - "--providers.docker"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entryPoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=naufaldi.rafif@gmail.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - letsencrypt:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - web
   guestbook:
     image: ghcr.io/naufaldi/guestbook:prod
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.guestbook-router.rule=Host(`dev.faldi.xyz`)"
-      - "traefik.http.routers.guestbook-router.entrypoints=websecure"
-      - "traefik.http.routers.guestbook-router.tls.certresolver=myresolver"
-      - "traefik.http.services.guestbook-service.loadbalancer.server.port=8080"
-      - "traefik.docker.network=web"
-      - "com.centurylinklabs.watchtower.enable=true"
-    ports:
-      - "8080"
+      caddy: dev.faldi.xyz
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+      com.centurylinklabs.watchtower.enable: "true"
     secrets:
       - db-password
     environment:
@@ -51,15 +14,13 @@ services:
       - POSTGRES_DB=guestbook
       - POSTGRES_PORT=5432
       - POSTGRES_SSLMODE=disable
-    deploy:
-      mode: replicated
-      replicas: 3
     restart: always
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - web
+      - edge
+      - guestbook-private
   db:
     image: postgres
     restart: always
@@ -71,22 +32,22 @@ services:
     environment:
       - POSTGRES_DB=guestbook
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-    expose:
-      - 5432
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - web
+      - guestbook-private
 volumes:
   db-data:
-  letsencrypt:
+
 secrets:
   db-password:
     file: db/password.txt
 
 networks:
-  web:
+  edge:
+    external: true
+  guestbook-private:
     driver: bridge
